@@ -1,0 +1,24 @@
+version: '2'
+services:
+  spring-boot:
+    build: ../images/spring-boot
+    ports:
+      - "8090:8090"
+    links:
+      - mysql:db
+    restart: always
+  mysql:
+    build: ../images/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=gamificationdb
+    ports:
+      - "3306:3306"
+  phpmyadmin:
+    build: ../images/phpmyadmin
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    ports:
+      - "6060:80"
+    links:
+      - mysql:db

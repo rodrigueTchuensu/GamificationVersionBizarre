@@ -1,0 +1,906 @@
+swagger: '2.0'
+info:
+  title: Gamification API
+  description: Move your app forward with the RFPS API.
+  version: "1.0.0"
+# the domain of the service
+host: localhost:8080
+# array of all schemes that your API supports
+schemes:
+  - http
+  - https
+# will be prefixed to all paths
+basePath: /v1
+paths:
+  /badges:
+    get:
+      description: 
+        The Badges endpoint returns information about badges belonging to the application whose id is present in the authentication token. The response includes the id, the name, the description, and the image URL of each badge. This response is a list of badge sorted by the id.
+      produces:
+        - application/json
+      tags:
+        - Badges
+      parameters:
+        - name: authenticationToken
+          in: header
+          description: Token used to authenticate the client application. This token must be preceded by "Bearer " pattern.
+          required: true
+          type: string
+      responses:
+        200:
+          description: OK, an array of badges.
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/BadgeOutputDTO'
+        400:
+          description: Bad request, if Authorization header isn't provided or if it's not properly named.
+        401:
+          description: Unauthorized, if authentication token provided in the Authorization header is malformed, not signed by the gamification API server or expired.
+        410:
+          description: Gone, if authentication token contains an application_id that doesn't exist. Typically, if the application was deleted.  
+        500:
+          description: Internal server error, if database isn't reachable.
+              
+    post:
+      description: Create a new badge belonging to the application whose id is present in the authentication token.
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: badge
+          description: Badge object that needs to be added to the database.
+          required: true
+          schema:
+              $ref: '#/definitions/BadgeInputDTO'
+        - name: authenticationToken
+          in: header
+          description: Token used to authenticate the client application. Token must be preceded by "Bearer " pattern.
+          required: true
+          type: string
+      responses:
+        201:
+          description: Created, returns the URL to access the new badge.
+          schema:
+            $ref: '#/definitions/LocationBadge'
+        400:
+          description: Bad request, if Authorization header isn't provided, if it's not properly named or if json payload is malformed.
+        401:
+          description: Unauthorized, if authentication token provided in the Authorization header is malformed, not signed by the gamification API server or expired. 
+        410:
+          description: Gone, if authentication token contains an application_id that doesn't exist. Typically, if the application was deleted.  
+        422:
+          description: Unprocessable entity,
+                       if mandatory fields aren't provided,
+                       if mandatory fields provided are empty or contain only spaces,
+                       if name provided contains more than 80 characters,
+                       if description or imageUrl provided contain more than 255 characters,
+                       if badge name provided already exists.
+        500:
+          description: Internal server error, if database isn't reachable.
+          
+  /badges/{id}:
+    get:
+      description: Returns the badge which has the specified id belonging to the application whose id is present in the authentication token.
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          type: integer
+          format: int64
+          description: The id of the desired badge.
+          required: true
+        - name: authenticationToken
+          in: header
+          description: Token used to authenticate the client application. Token must be preceded by "Bearer " pattern.
+          required: true
+          type: string
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/BadgeOutputDTO'
+        400:
+          description: Bad request, if Authorization header isn't provided or if it's not properly named.
+        401:
+          description: Unauthorized, if authentication token provided in the Authorization header is malformed, not signed by the gamification API server or expired. 
+        404:
+          description: Not found, if id provided doesn't exist for this application.
+        410:
+          description: Gone, if authentication token contains an application_id that doesn't exist. Typically, if the application was deleted.  
+        500:
+          description: Internal server error, if database isn't reachable.
+          
+    put:
+      description: Modify completely the existing badge which has the specified id belonging to the application whose id is present in the authentication token.
+      consumes:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          type: integer
+          format: int64
+          description: The id of the desired badge.
+          required: true
+        - name: badge
+          in: body
+          description: Badge to be updated
+          required: true
+          schema:
+              $ref: '#/definitions/BadgeInputDTO'
+        - name: authenticationToken
+          in: header
+          description: Token used to authenticate the client application. Token must be preceded by "Bearer " pattern.
+          required: true
+          type: string
+      responses:
+        204:
+          description: No content, if success.
+        400:
+          description: Bad request, if Authorization header isn't provided, if it's not properly named or if json payload is malformed.
+        401:
+          description: Unauthorized, if authentication token provided in the Authorization header is malformed, not signed by the gamification API server or expired. 
+        404:
+          description: Not found, if id provided doesn't exist for this application.
+        410:
+          description: Gone, if authentication token contains an application_id that doesn't exist. Typically, if the application was deleted.  
+        422:
+          description: Unprocessable entity,
+                       if mandatory fields aren't provided,
+                       if mandatory fields provided are empty or contain only spaces,
+                       if name provided contains more than 80 characters,
+                       if description or imageUrl provided contain more than 255 characters,
+                       if badge name provided already exists.
+        500:
+          description: Internal server error, if database isn't reachable.
+
+    delete:
+      description: Delete the badge which has the specified id belonging to the application whose id is present in the authentication token.
+      parameters:
+        - name: id
+          in: path
+          type: integer
+          format: int64
+          description: The id of the desired badge.
+          required: true
+        - name: authenticationToken
+          in: header
+          description: Token used to authenticate the client application. Token must be preceded by "Bearer " pattern.
+          required: true
+          type: string
+      responses:
+        204:
+          description: No content, if success.
+        400:
+          description: Bad request, if Authorization header isn't provided, if it's not properly named.
+        401:
+          description: Unauthorized, if authentication token provided in the Authorization header is malformed, not signed by the gamification API server or expired. 
+        404:
+          description: Not found, if id provided doesn't exist for this application.
+        410:
+          description: Gone, if authentication token contains an application_id that doesn't exist. Typically, if the application was deleted.  
+        500:
+          description: Internal server error, if database isn't reachable.
+          
+  /pointScales:
+    get:
+      description: 
+        The PointScales endpoint returns information about point scales belonging to the application whose id is present in the authentication token. The response includes the id, the name, the description, and the coefficient of each point scale. This response is a list of point scale sorted by the id.
+      produces:
+        - application/json
+      tags:
+        - PointScales
+      parameters:
+        - name: authenticationToken
+          in: header
+          description: Token used to authenticate the client application. This token must be preceded by "Bearer " pattern.
+          required: true
+          type: string
+      responses:
+        200:
+          description: OK, an array of point scales.
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/PointScaleOutputDTO'
+        400:
+          description: Bad request, if Authorization header isn't provided or if it's not properly named.
+        401:
+          description: Unauthorized, if authentication token provided in the Authorization header is malformed, not signed by the gamification API server or expired. 
+        500:
+          description: Internal server error, if database isn't reachable.
+          
+    post:
+      description: Create a new point scale for this application.
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: badge
+          description: PointScale object that needs to be added to the database.
+          required: true
+          schema:
+              $ref: '#/definitions/PointScaleInputDTO'
+        - name: authenticationToken
+          in: header
+          description: Token used to authenticate the client application. Token must be preceded by "Bearer " pattern.
+          required: true
+          type: string
+      responses:
+        201:
+          description: Created, returns the URL to access the new point scale.
+          schema:
+            $ref: '#/definitions/LocationPointScale'
+        400:
+          description: Bad request, if Authorization header isn't provided, if it's not properly named or if json payload is malformed.
+        401:
+          description: Unauthorized, if authentication token provided in the Authorization header is malformed, not signed by the gamification API server or expired. 
+        422:
+          description: Unprocessable entity,
+                       if mandatory fields aren't provided,
+                       if mandatory fields provided are empty or contain only spaces,
+                       if mandatory fields contain more than 80 characters,
+                       if point scale name provided already exists.
+        500:
+          description: Internal server error, if database isn't reachable.
+          
+  /pointScales/{id}:
+    get:
+      description: Returns the point scale which has the specified id.
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          description: The id of the desired point scale.
+          required: true
+          type: integer
+          format: int64
+        - name: authenticationToken
+          in: header
+          description: Token used to authenticate the client application. Token must be preceded by "Bearer " pattern.
+          required: true
+          type: string
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/PointScaleOutputDTO'
+        400:
+          description: Bad request, if Authorization header isn't provided or if it's not properly named.
+        401:
+          description: Unauthorized, if authentication token provided in the Authorization header is malformed, not signed by the gamification API server or expired. 
+        404:
+          description: Not found, if id provided doesn't exist for this application.
+        500:
+          description: Internal server error, if database isn't reachable.
+          
+    put:
+      description: Modify completely the existing point scale which has the specified id.
+      consumes:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          description: The id of the point scale to modify.
+          required: true
+          type: integer
+          format: int64
+        - name: pointScale
+          in: body
+          description: PointScale to be updated
+          required: true
+          schema:
+              $ref: '#/definitions/PointScaleInputDTO'
+        - name: authenticationToken
+          in: header
+          description: Token used to authenticate the client application. Token must be preceded by "Bearer " pattern.
+          required: true
+          type: string
+      responses:
+        204:
+          description: No content, if success.
+        400:
+          description: Bad request, if Authorization header isn't provided, if it's not properly named or if json payload is malformed.
+        401:
+          description: Unauthorized, if authentication token provided in the Authorization header is malformed, not signed by the gamification API server or expired. 
+        404:
+          description: Not found, if id provided doesn't exist for this application.
+        422:
+          description: Unprocessable entity,
+                       if mandatory fields aren't provided,
+                       if mandatory fields provided are empty or contain only spaces,
+                       if name provided contains more than 80 characters,
+                       if pointScale name provided already exists.
+        500:
+          description: Internal server error, if database isn't reachable.
+          
+    delete:
+      description: Delete the point scale which has the specified id.
+      parameters:
+        - name: id
+          in: path
+          description: The id of the desired point scale.
+          required: true
+          type: integer
+          format: int64
+        - name: authenticationToken
+          in: header
+          description: Token used to authenticate the client application. Token must be preceded by "Bearer " pattern.
+          required: true
+          type: string
+      responses:
+        204:
+          description: No content, if success.
+        400:
+          description: Bad request, if Authorization header isn't provided or if it's not properly named.
+        401:
+          description: Unauthorized, if authentication token provided in the Authorization header is malformed, not signed by the gamification API server or expired. 
+        404:
+          description: Not found, if id provided doesn't exist for this application.
+        500:
+          description: Internal server error, if database isn't reachable.
+          
+  /applications:
+    get:
+      description: 
+        The Applications endpoint returns information about the application whose id is present in the authentication token. The response includes the application id, the application name and the application description.
+      produces:
+        - application/json
+      tags:
+        - Applications
+      parameters:
+        - name: authenticationToken
+          in: header
+          description: Token used to authenticate the client application. Token must be preceded by "Bearer " pattern.
+          required: true
+          type: string
+      responses:
+        200:
+          description: OK, returns the application.
+          schema:
+              $ref: '#/definitions/ApplicationOutputDTO'
+        400:
+          description: Bad request, if Authorization header isn't provided or if it's not properly named.
+        401:
+          description: Unauthorized, if authentication token provided in the Authorization header is malformed, not signed by the gamification API server or expired. 
+        410:
+          description: Gone, if authentication token contains an application_id that doesn't exist. Typically, if the application was deleted.
+        500:
+          description: Internal server error, if database isn't reachable.
+          
+    post:
+      description: Create a new application.
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: application
+          description: Application object that needs to be added to the database.
+          required: true
+          schema:
+              $ref: '#/definitions/ApplicationInputDTO'
+      responses:
+        201:
+          description: Created, if it saved successfully.
+        422:
+          description: Unprocessable entity,
+                       if mandatory fields aren't provided,
+                       if mandatory fields provided are empty or contain only spaces,
+                       if name or password fields contain more than 80 characters,
+                       if description field contain more than 255 characters,
+                       if password contains less than 7 characters,
+                       if application name provided already exists.
+        500:
+          description: Internal server error, if database isn't reachable.
+          
+    put:
+      description: Modify completely this application whose id is present in the authentication token.
+      consumes:
+        - application/json
+      parameters:
+        - name: application
+          in: body
+          description: Application to be updated
+          required: true
+          schema:
+              $ref: '#/definitions/ApplicationInputDTO'
+        - name: authenticationToken
+          in: header
+          description: Token used to authenticate the client application. Token must be preceded by "Bearer " pattern.
+          required: true
+          type: string
+      responses:
+        204:
+          description: No content, if success.
+        400:
+          description: Bad request, if Authorization header isn't provided, if it's not properly named or if json payload is malformed.
+        401:
+          description: Unauthorized, if authentication token provided in the Authorization header is malformed, not signed by the gamification API server or expired. 
+        410:
+          description: Gone, if authentication token contains an application_id that doesn't exist. Typically, if the application was deleted.
+        422:
+          description: Unprocessable entity,
+                       if mandatory fields aren't provided,
+                       if mandatory fields provided are empty or contain only spaces,
+                       if name or password fields contain more than 80 characters,
+                       if description field contain more than 255 characters,
+                       if password contains less than 7 characters,
+                       if application name provided already exists.
+        500:
+          description: Internal server error, if database isn't reachable.
+
+    delete:
+      description: Delete the application which has the specified id.
+      parameters:
+        - name: authenticationToken
+          in: header
+          description: Token used to authenticate the client application. Token must be preceded by "Bearer " pattern.
+          required: true
+          type: string
+      responses:
+        204:
+          description: No content, if success.
+        400:
+          description: Bad request, if Authorization header isn't provided or if it's not properly named.
+        401:
+          description: Unauthorized, if authentication token provided in the Authorization header is malformed, not signed by the gamification API server or expired. 
+        410:
+          description: Gone, if authentication token contains an application_id that doesn't exist. Typically, if the application was deleted.
+        500:
+          description: Internal server error, if database isn't reachable.
+          
+  /authentications:
+    post:
+      description: Send an authentication.
+      consumes:
+        - application/json
+      tags:
+        - Authentications
+      parameters:
+        - in: body
+          name: authentication
+          description: Authentication object that used to authenticate application.
+          required: true
+          schema:
+              $ref: '#/definitions/AuthenticationInputDTO'
+      responses:
+        200:
+          description: Ok, returns a Json web token.
+          schema:
+            type: string
+        400:
+          description: Bad request, if json payload is malformed.
+        401:
+          description: Unauthorized, if name or/and password are incorrect.
+        422:
+          description: Unprocessable entity,
+                       if mandatory fields aren't provided.
+        500:
+          description: Internal server error, if database isn't reachable.
+          
+  /events:
+    post:
+      description: Create a new even in an application.
+      consumes:
+        - application/json
+      tags:
+        - Events
+      parameters:
+        - in: body
+          name: event
+          description: Event object that needs to be added to an application in a database.
+          required: true
+          schema:
+              $ref: '#/definitions/EventInputDTO'
+      responses:
+        201:
+          description: Created, returns the URL to access the new event.
+          schema:
+            $ref: '#/definitions/LocationEvent'
+        422:
+          description: Unprocessable entity,
+                       if mandatory fields aren't provided,
+                       if mandatory fields provided are empty or contain only spaces,
+                       if mandatory fields contain more than 80 characters,
+                       if application name provided already exists.
+        500:
+          description: Internal server error, if database isn't reachable.
+          
+  /users:
+    get:
+      description: 
+        The Applications endpoint returns information about an users which are available.
+      produces:
+        - application/json
+      tags:
+        - Users
+      responses:
+        200:
+          description: OK, an array of users.
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/UserOutputDTO'
+        500:
+          description: Internal server error, if database isn't reachable.
+          
+  /rules:
+    get:
+      description: 
+        The rules of the application whose id is present in the authentication token.
+      produces:
+        - application/json
+      parameters:
+        - name: authenticationToken
+          in: header
+          description: Token used to authenticate the client application. Token must be preceded by "Bearer " pattern.
+          required: true
+          type: string
+      tags:
+        - Rules
+      responses:
+        200:
+          description: OK, an array of rules.
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/RuleOutputDTO'
+        400:
+          description: Bad request, if Authorization header isn't provided or if it's not properly named.
+        401:
+          description: Unauthorized, if authentication token provided in the Authorization header is malformed, not signed by the gamification API server or expired. 
+        500:
+          description: Internal server error, if database isn't reachable.
+              
+    post:
+      description: Create a new rule for the application whose id is present in the authentication token.
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: rule
+          description: Rule object that needs to be added to the database.
+          required: true
+          schema:
+              $ref: '#/definitions/RuleInputDTO'
+        - name: authenticationToken
+          in: header
+          description: Token used to authenticate the client application. Token must be preceded by "Bearer " pattern.
+          required: true
+          type: string
+      responses:
+        201:
+          description: Created, returns the URL to access the new rule.
+          schema:
+            $ref: '#/definitions/LocationRule'
+        400:
+          description: Bad request, if Authorization header isn't provided, if it's not properly named or if json payload is malformed.
+        401:
+          description: Unauthorized, if authentication token provided in the Authorization header is malformed, not signed by the gamification API server or expired. 
+        422:
+          description: Unprocessable entity,
+                       if mandatory fields aren't provided,
+                       if mandatory fields provided are empty or contain only spaces,
+                       if name provided contains more than 80 characters,
+                       if description or imageUrl provided contain more than 255 characters,
+                       if rule name provided already exists.
+        500:
+          description: Internal server error, if database isn't reachable.
+          
+  /rules/{id}:
+    get:
+      description: Returns the rule which has the specified id.
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          type: integer
+          format: int64
+          description: The id of the desired rule.
+          required: true
+        - name: authenticationToken
+          in: header
+          description: Token used to authenticate the client application. Token must be preceded by "Bearer " pattern.
+          required: true
+          type: string
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/RuleOutputDTO'
+        400:
+          description: Bad request, if Authorization header isn't provided or if it's not properly named.
+        401:
+          description: Unauthorized, if authentication token provided in the Authorization header is malformed, not signed by the gamification API server or expired. 
+        404:
+          description: Not found, if id provided doesn't exist.
+        500:
+          description: If database isn't reachable.
+          
+    put:
+      description: Modify completely the existing rule which has the specified id.
+      consumes:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          description: The id of the rule to modify.
+          required: true
+          type: integer
+          format: int64
+        - name: rule
+          in: body
+          description: rule to be updated
+          required: true
+          schema:
+              $ref: '#/definitions/RuleInputDTO'
+        - name: authenticationToken
+          in: header
+          description: Token used to authenticate the client application. Token must be preceded by "Bearer " pattern.
+          required: true
+          type: string
+      responses:
+        204:
+          description: No content, if success.
+        404:
+          description: Not found, if id provided doesn't exist.
+        400:
+          description: Bad request, if Authorization header isn't provided, if it's not properly named or if json payload is malformed.
+        401:
+          description: Unauthorized, if authentication token provided in the Authorization header is malformed, not signed by the gamification API server or expired. 
+        422:
+          description: Unprocessable entity,
+                       if mandatory fields aren't provided,
+                       if mandatory fields provided are empty or contain only spaces,
+                       if name provided contains more than 80 characters,
+                       if description or imageUrl provided contain more than 255 characters,
+                       if rule name provided already exists.
+        500:
+          description: Internal server error, if database isn't reachable.
+
+    delete:
+      description: Delete the rule which has the specified id.
+      parameters:
+        - name: id
+          in: path
+          description: The id of the desired rule.
+          required: true
+          type: integer
+          format: int64
+        - name: authenticationToken
+          in: header
+          description: Token used to authenticate the client application. Token must be preceded by "Bearer " pattern.
+          required: true
+          type: string
+      responses:
+        204:
+          description: No content, if success.
+        400:
+          description: Bad request, if Authorization header isn't provided or if it's not properly named.
+        401:
+          description: Unauthorized, if authentication token provided in the Authorization header is malformed, not signed by the gamification API server or expired. 
+        404:
+          description: Not found, if id provided doesn't exist.
+        500:
+          description: Internal server error, if database isn't reachable.
+          
+definitions:
+  BadgeOutputDTO:
+    type: object
+    required: [badge_id, name, description, imageURL]
+    properties:
+      badge_id:
+        type: integer
+        format: int64
+        description: Unique identifier representing a specific badge.
+      name:
+        type: string
+        description: Display name of badge.
+      description:
+        type: string
+        description: Description of badge.
+      imageURL:
+        type: string
+        description: Image URL representing the badge.
+        
+  BadgeInputDTO:
+    type: object
+    required: [name,description,imageURL]
+    properties:
+      name:
+        type: string
+        description: Display name of badge.
+      description:
+        type: string
+        description: Description of badge.
+      imageURL:
+        type: string
+        description: The URL of the image          
+
+  LocationBadge:
+      type: string
+      required: [locationBadge]
+      properties:
+        locationBadge:
+          type: string
+          description: Unique URL to access the new object created.
+          
+  PointScaleOutputDTO:
+    type: object
+    required: [pointScale_id, name, description, coefficient]
+    properties:
+      pointScale_id:
+        type: string
+        description: Unique identifier representing a specific point scale.
+      name:
+        type: string
+        description: Display name of point scale.
+      description:
+        type: string
+        description: Description of point scale.
+      coefficient:
+        type: integer
+        description: Coeffcient of the point scale.
+        
+  PointScaleInputDTO:
+    type: object
+    required: [name,description, coefficient]
+    properties:
+      name:
+        type: string
+        description: Display name of point scale.
+      description:
+        type: string
+        description: Description of point scale.
+      coefficient:
+        type: integer
+        description: Coeffcient of the point scale.
+  
+  LocationPointScale:
+    type: string 
+    required: [locationPointScale]
+    properties:
+      locationPointScale:
+        type: string
+        description: Unique URL to access the new object created.
+          
+  EventInputDTO:
+    type: object
+    required: [name,description,applicationId,userAppId]
+    properties:
+      name:
+        type: string
+        description: Display name of the application.
+      description:
+        type: string
+        description: Description of the application.
+      applicationId:
+        type: integer
+        format: int64
+        description: Id of the type of the application using the gamification platform
+      userAppId:
+        type: integer
+        format: int64
+        description: Id of the user using the platform
+
+  LocationEvent:
+      type: string
+      required: [locationEvent]
+      properties:
+        locationEvent:
+          type: string
+          description: Unique URL to access the new object created.
+          
+  UserOutputDTO:
+    type: object
+    required: [user_id, userIdApp, appId]
+    properties:
+      user_id:
+        type: integer
+        description: Unique identifier representing a specific user.
+      userIdApp:
+        type: integer
+        description: Unique identifier of a user in the gamification platform.
+      appId:
+        type: integer
+        description: Unique identifier of the application
+  
+  RuleOutputDTO:
+    type: object
+    required: [rule_id, name, description, points]
+    properties:
+      rule_id:
+        type: string
+        description: Unique identifier representing a specific rule.
+      name:
+        type: string
+        description: Display rule's name.
+      description:
+        type: string
+        description: Description of rule.
+      points:
+        type: integer
+        description: Number of points to get or lose.
+      
+  RuleInputDTO:
+    type: object
+    required: [ruleName, description, badge_id, pointScale_id, points, eventType]
+    properties:
+      ruleName:
+        type: string
+        description: Display rule's name.
+      description:
+        type: string
+        description: Description of the rule.
+      badge_id:
+        type: integer
+        description: The id of the badge to be given to a user
+      pointScale_id:
+        type: integer
+        description: The id of the pointScale to be given to a user
+      points:
+        type: integer
+        description: score of point to get/lose by this rule
+      eventType:
+        type: string
+        description: The type of the up coming event
+
+  LocationRule:
+      type: string
+      required: [locationRule]
+      properties:
+        locationRule:
+          type: string
+          description: Unique URL to access the new object created.
+          
+  ApplicationOutputDTO:
+    type: object
+    required: [application_id, name, description]
+    properties:
+      application_id:
+        type: integer
+        format: int64
+        description: Unique identifier representing a specific registration.
+      name:
+        type: string
+        description: Display name of application.
+      description:
+        type: string
+        description: Description of the application.
+        
+  ApplicationInputDTO:
+    type: object
+    required: [name, description, password]
+    properties:
+      name:
+        type: string
+        description: Display name of application.
+      description:
+        type: string
+        description: Description of application.
+      password:
+        type: string
+        description: Password of the application.
+        
+  LocationApplication:
+      type: string
+      required: [locationApplication]
+      properties:
+        locationApplication:
+          type: string
+          description: Unique URL to access the new object created.
+          
+  AuthenticationInputDTO:
+    type: object
+    required: [name, password]
+    properties:
+      name:
+        type: string
+        description: Name of application to authenticate.
+      password:
+        type: string
+        description: Password of the application.
+        
